@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Навигационная панель taxiuz</title>
+    <style>
+      :root {
+        --bg: #0b1220;
+        --panel: #111a2e;
+        --panel-2: #0f1930;
+        --text: #e8eefc;
+        --muted: #a9b4d0;
+        --accent: #4f8cff;
+        --accent-2: #22d3ee;
+        --danger: #ef4444;
+        --success: #22c55e;
+        --warning: #f59e0b;
+        --ring: rgba(79, 140, 255, .35);
+        --shadow: 0 10px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+      }
+
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        color: var(--text);
+        background: radial-gradient(1200px 800px at 10% -10%, rgba(79,140,255,.12), transparent),
+                    radial-gradient(900px 600px at 120% 20%, rgba(34,211,238,.12), transparent),
+                    var(--bg);
+        letter-spacing: .2px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      /* Header */
+      .nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px 20px;
+        background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+        border: 1px solid rgba(255,255,255,.06);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(6px);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 700;
+        font-size: 18px;
+      }
+      .badge {
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(79,140,255,.15);
+        color: var(--accent);
+        font-size: 12px;
+        border: 1px solid rgba(79,140,255,.35);
+      }
+      .actions { display: flex; gap: 10px; align-items: center; }
+      .btn {
+        appearance: none;
+        border: 1px solid rgba(255,255,255,.08);
+        background: linear-gradient(180deg, #1a2746, #121a30);
+        color: var(--text);
+        padding: 10px 14px;
+        border-radius: 10px;
+        cursor: pointer;
+        box-shadow: var(--shadow);
+        transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+      }
+      .btn:hover { transform: translateY(-1px); border-color: var(--ring); }
+      .btn-outline {
+        background: transparent;
+        border-color: rgba(255,255,255,.18);
+      }
+
+      /* Title */
+      .title {
+        margin: 22px 8px 14px;
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .title h1 { margin: 0; font-size: 28px; letter-spacing: .3px; }
+      .subtitle { color: var(--muted); font-size: 14px; }
+
+      /* Grid */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 16px;
+      }
+      .card {
+        grid-column: span 12;
+        background: linear-gradient(180deg, var(--panel), var(--panel-2));
+        border: 1px solid rgba(255,255,255,.06);
+        border-radius: 16px;
+        padding: 18px;
+        box-shadow: var(--shadow);
+        position: relative;
+        overflow: hidden;
+        transition: transform .16s ease, border-color .16s ease, background .16s ease;
+      }
+      .card:hover { transform: translateY(-2px); border-color: var(--ring); }
+      .card a { color: inherit; text-decoration: none; display: block; }
+      .card .head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+      .icon {
+        width: 42px; height: 42px; border-radius: 10px;
+        display: grid; place-items: center;
+        background: rgba(79,140,255,.14);
+        border: 1px solid rgba(79,140,255,.35);
+      }
+      .icon.warning { background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.35); }
+      .icon.danger  { background: rgba(239,68,68,.12);  border-color: rgba(239,68,68,.35); }
+      .icon.success { background: rgba(34,197,94,.12);  border-color: rgba(34,197,94,.35); }
+      .icon.cyan    { background: rgba(34,211,238,.12); border-color: rgba(34,211,238,.35); }
+      .card h3 { margin: 0; font-size: 18px; }
+      .card p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+      .meta { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; }
+      .chip {
+        border: 1px solid rgba(255,255,255,.1);
+        background: rgba(255,255,255,.04);
+        border-radius: 999px; padding: 6px 10px; font-size: 12px; color: var(--muted);
+      }
+
+      /* Responsive */
+      @media (min-width: 640px) {
+        .card { padding: 20px; }
+        .grid > .span-6 { grid-column: span 6; }
+      }
+      @media (min-width: 1024px) {
+        .grid > .span-4 { grid-column: span 4; }
+        .grid > .span-6 { grid-column: span 6; }
+      }
+
+      /* Footer */
+      .footer {
+        margin-top: 26px;
+        color: var(--muted);
+        font-size: 12px;
+        text-align: center;
+        opacity: .8;
+      }
+
+      /* Focus ring for accessibility */
+      a:focus-visible, .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+      <div class="nav">
+        <div class="brand">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M3 12h18M5 7h14M7 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          admin · taxiuz
+          <span class="badge">navigation</span>
+        </div>
+        <div class="actions">
+          <button class="btn btn-outline" onclick="location.href='index.html'">На сайт</button>
+          <button class="btn" onclick="location.reload()">Обновить</button>
+        </div>
+      </div>
+
+      <div class="title">
+        <h1>Разделы админ-панели</h1>
+        <div class="subtitle">Выберите модуль для управления сервисом</div>
+      </div>
+
+      <div class="grid">
+        <!-- 1. Карта/статистика -->
+        <div class="card span-6">
+          <a href="admin-map.html">
+            <div class="head">
+              <div class="icon cyan" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2C7.58 2 4 5.58 4 10c0 5 8 12 8 12s8-7 8-12c0-4.42-3.58-8-8-8Zm0 10a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z" fill="currentColor"/>
+                </svg>
+              </div>
+              <div>
+                <h3>Карта и статистика</h3>
+                <p>Передвижение таксистов, точки клиентов, общее количество по статусам.</p>
+              </div>
+            </div>
+            <div class="meta">
+              <span class="chip">Онлайн-мониторинг</span>
+              <span class="chip">Фильтры</span>
+              <span class="chip">Актуальные цифры</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- 2. Модерация жалоб -->
+        <div class="card span-6">
+          <a href="admin-complaints.html">
+            <div class="head">
+              <div class="icon danger" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div>
+                <h3>Модерация жалоб</h3>
+                <p>От клиентов и водителей. Очередь, статусы, шаблоны ответов.</p>
+              </div>
+            </div>
+            <div class="meta">
+              <span class="chip">Двусторонние жалобы</span>
+              <span class="chip">Приоритеты</span>
+              <span class="chip">Аудит</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- 3. Ценообразование и комиссия -->
+        <div class="card span-4">
+          <a href="admin-pricing.html">
+            <div class="head">
+              <div class="icon warning" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div>
+                <h3>Тарифы и комиссия</h3>
+                <p>Средняя стоимость за км и процент комиссии по сегментам.</p>
+              </div>
+            </div>
+            <div class="meta">
+              <span class="chip">Города/зоны</span>
+              <span class="chip">Пиковые часы</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- 4. Техподдержка -->
+        <div class="card span-4">
+          <a href="admin-support.html">
+            <div class="head">
+              <div class="icon success" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path d="M20 16.58A5 5 0 0 0 18 7H6a5 5 0 0 0-2 9.58V20a2 2 0 0 0 3.14 1.66L10 19h4l2.86 2.66A2 2 0 0 0 20 20v-3.42Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div>
+                <h3>Техподдержка</h3>
+                <p>Коммуникация с клиентами и таксистами, SLA и статусы.</p>
+              </div>
+            </div>
+            <div class="meta">
+              <span class="chip">Шаблоны</span>
+              <span class="chip">SLA</span>
+              <span class="chip">FAQ</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- 5. Инфраструктура/сервер -->
+        <div class="card span-4">
+          <a href="admin-infra.html">
+            <div class="head">
+              <div class="icon" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 6h16v4H4V6Zm0 8h16v4H4v-4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div>
+                <h3>Инфраструктура</h3>
+                <p>Мощность сервера, масштабирование и лимиты для роста.</p>
+              </div>
+            </div>
+            <div class="meta">
+              <span class="chip">Ресурсы</span>
+              <span class="chip">Auto-scale</span>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <div class="footer"> taxiuz admin • UI preview</div>
+    </div>
+ 
+</body>
+</html>

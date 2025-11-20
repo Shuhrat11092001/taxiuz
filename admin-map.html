@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Карта и статистика</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <style>
+      :root {
+        --bg: #0b1220;
+        --panel: #111a2e;
+        --panel-2: #0f1930;
+        --text: #e8eefc;
+        --muted: #a9b4d0;
+        --accent: #4f8cff;
+        --cyan: #22d3ee;
+        --danger: #ef4444;
+        --success: #22c55e;
+        --warning: #f59e0b;
+        --ring: rgba(79, 140, 255, .35);
+        --shadow: 0 10px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+      }
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        color: var(--text);
+        background: var(--bg);
+        letter-spacing: .2px;
+      }
+      .container { max-width: 1280px; margin: 0 auto; padding: 24px; }
+
+      /* Header */
+      .nav { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 20px; background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0)); border:1px solid rgba(255,255,255,.06); border-radius:14px; box-shadow: var(--shadow); backdrop-filter: blur(6px); }
+      .brand { display:flex; align-items:center; gap:12px; font-weight:700; font-size:18px; }
+      .badge { padding:2px 8px; border-radius:999px; background: rgba(79,140,255,.15); color: var(--accent); font-size:12px; border:1px solid rgba(79,140,255,.35); }
+      .actions { display:flex; gap:10px; align-items:center; }
+      .btn { appearance:none; border:1px solid rgba(255,255,255,.08); background: linear-gradient(180deg, #1a2746, #121a30); color:var(--text); padding:10px 14px; border-radius:10px; cursor:pointer; box-shadow: var(--shadow); transition: transform .12s ease, border-color .12s ease; }
+      .btn:hover { transform: translateY(-1px); border-color: var(--ring); }
+      .btn-outline { background: transparent; border-color: rgba(255,255,255,.18); }
+
+      /* Toolbar */
+      .toolbar { margin-top: 18px; display:flex; flex-wrap:wrap; gap:12px; padding:12px; border:1px solid rgba(255,255,255,.06); border-radius:12px; background: linear-gradient(180deg, var(--panel), var(--panel-2)); box-shadow: var(--shadow); }
+      .field { display:flex; align-items:center; gap:8px; background: rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:10px; padding:8px 10px; color:var(--muted); }
+      .field select, .field input { background: transparent; border: none; color: var(--text); outline: none; font-size:14px; }
+      .field label { font-size:12px; color: var(--muted); }
+
+      /* Stats */
+      .stats { margin-top: 14px; display:grid; grid-template-columns: repeat(12, 1fr); gap:14px; }
+      .stat { grid-column: span 12; background: linear-gradient(180deg, var(--panel), var(--panel-2)); border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; box-shadow: var(--shadow); }
+      .stat .label { color: var(--muted); font-size:12px; }
+      .stat .value { font-size:24px; font-weight:700; letter-spacing:.3px; }
+      .stat .trend { font-size:12px; padding:4px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.1); color: var(--muted); background: rgba(255,255,255,.04); }
+      .stat.drivers .value { color: var(--cyan); }
+      .stat.clients .value { color: var(--accent); }
+
+      @media (min-width: 768px) {
+        .stat { grid-column: span 6; }
+      }
+
+      /* Layout */
+      .layout { margin-top:16px; display:grid; grid-template-columns: 1fr; gap:16px; }
+      @media (min-width: 1024px) { .layout { grid-template-columns: 1.5fr .8fr; } }
+
+      /* Map */
+      .map-card { background: linear-gradient(180deg, var(--panel), var(--panel-2)); border:1px solid rgba(255,255,255,.06); border-radius:16px; overflow:hidden; box-shadow: var(--shadow); position: relative; min-height: 480px; }
+      .map-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.06); }
+      .map { position: relative; height: 560px; background-image: radial-gradient(circle at 25px 25px, rgba(255,255,255,.06) 1px, transparent 0), radial-gradient(circle at 75px 75px, rgba(255,255,255,.06) 1px, transparent 0); background-size: 100px 100px; background-color: #0e172a; }
+      .legend { position: absolute; right: 14px; top: 14px; display:flex; flex-direction:column; gap:8px; }
+      .chip { border:1px solid rgba(255,255,255,.1); background: rgba(255,255,255,.06); color: var(--muted); border-radius:999px; padding:6px 10px; font-size:12px; display:flex; align-items:center; gap:8px; }
+      .dot { width:10px; height:10px; border-radius:999px; display:inline-block; }
+      .dot.driver { background: var(--cyan); }
+      .dot.client { background: var(--accent); }
+      .dot.alert  { background: var(--danger); }
+
+      /* Sidebar */
+      .side { background: linear-gradient(180deg, var(--panel), var(--panel-2)); border:1px solid rgba(255,255,255,.06); border-radius:16px; overflow:hidden; box-shadow: var(--shadow); }
+      .side h3 { margin: 0; padding: 14px 16px; border-bottom:1px solid rgba(255,255,255,.06); font-size:16px; }
+      .events { max-height: 640px; overflow:auto; }
+      .event { display:flex; gap:10px; padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.04); }
+      .event .time { color: var(--muted); font-size:12px; width:64px; flex: 0 0 auto; }
+      .event .desc { font-size:14px; }
+      .pill { padding:2px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.1); font-size:11px; color: var(--muted); }
+      .pill.ok { color: var(--success); border-color: rgba(34,197,94,.35); }
+      .pill.warn { color: var(--warning); border-color: rgba(245,158,11,.35); }
+      .pill.err { color: var(--danger); border-color: rgba(239,68,68,.35); }
+
+      /* Accessibility */
+      a:focus-visible, .btn:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+      
+      /* Lists */
+      .lists { margin-top:16px; display:grid; grid-template-columns: 1fr; gap:16px; }
+      @media (min-width: 1024px) { .lists { grid-template-columns: 1fr 1fr; } }
+      .list-card { background: linear-gradient(180deg, var(--panel), var(--panel-2)); border:1px solid rgba(255,255,255,.06); border-radius:16px; overflow:hidden; box-shadow: var(--shadow); }
+      .list-card h3 { margin:0; padding:14px 16px; border-bottom:1px solid rgba(255,255,255,.06); font-size:16px; }
+      .list { max-height: 360px; overflow:auto; }
+      .row { display:grid; grid-template-columns: 96px 1fr 120px; gap:10px; align-items:center; padding:10px 14px; border-bottom:1px solid rgba(255,255,255,.04); }
+      .row .id { font-weight:600; letter-spacing:.2px; }
+      .row .action { color: var(--muted); font-size:13px; }
+      .status { justify-self:end; padding:4px 8px; border-radius:999px; border:1px solid rgba(255,255,255,.1); font-size:12px; color: var(--muted); }
+      .status.online { color: var(--success); border-color: rgba(34,197,94,.35); }
+      .status.busy { color: var(--warning); border-color: rgba(245,158,11,.35); }
+      .status.offline { color: var(--danger); border-color: rgba(239,68,68,.35); }
+    </style>
+</head>
+<body>
+    <div class="container">
+      <div class="nav">
+        <div class="brand">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M3 12h18M5 7h14M7 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          admin · taxiuz
+          <span class="badge">map & stats</span>
+        </div>
+        <div class="actions">
+          <button class="btn btn-outline" onclick="location.href='admin-navigate.html'">Назад</button>
+          <button class="btn" onclick="location.reload()">Обновить</button>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar" role="region" aria-label="Фильтры">
+        <div class="field">
+          <label for="status">Статус</label>
+          <select id="status" name="status">
+            <option>Все</option>
+            <option>Онлайн</option>
+            <option>Оффлайн</option>
+            <option>На заказе</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="city">Город</label>
+          <select id="city" name="city">
+            <option>Все</option>
+            <option>Ташкент</option>
+            <option>Самарканд</option>
+            <option>Бухара</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="time">Период</label>
+          <select id="time" name="time">
+            <option>Сейчас</option>
+            <option>Последние 1 ч</option>
+            <option>Сегодня</option>
+          </select>
+        </div>
+        <button class="btn">Применить</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats">
+        <div class="stat drivers">
+          <div>
+            <div class="label">Таксисты (всего/онлайн)</div>
+            <div class="value">124 / 87</div>
+          </div>
+          <div class="trend">+5 за 24ч</div>
+        </div>
+        <div class="stat clients">
+          <div>
+            <div class="label">Клиенты (всего/активные)</div>
+            <div class="value">312 / 54</div>
+          </div>
+          <div class="trend">+12 за 24ч</div>
+        </div>
+      </div>
+
+
+
+      <!-- Layout: map + side -->
+      <div class="layout">
+        <div class="map-card">
+          <div class="map-toolbar">
+            <div class="field"><span style="font-size:12px;color:var(--muted)">Отрисовка</span>
+              <select>
+                <option>Все</option>
+                <option>Только таксисты</option>
+                <option>Только клиенты</option>
+              </select>
+            </div>
+            <div class="field"><span style="font-size:12px;color:var(--muted)">Слой</span>
+              <select>
+                <option>Улицы</option>
+                <option>Спутник</option>
+                <option>Гибрид</option>
+              </select>
+            </div>
+          </div>
+          <div class="map" id="map" role="region" aria-label="Карта перемещений">
+            <div class="legend" aria-label="Легенда">
+              <div class="chip"><span class="dot driver"></span> Таксист</div>
+              <div class="chip"><span class="dot client"></span> Клиент</div>
+              <div class="chip"><span class="dot alert"></span> Инцидент</div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="side" aria-label="Лента событий">
+          <h3>События</h3>
+          <div class="events">
+            <div class="event">
+              <div class="time">10:12</div>
+              <div class="desc">Водитель #D-104 принял заказ от клиента #C-552 на Чиланзар. <span class="pill ok">OK</span></div>
+            </div>
+            <div class="event">
+              <div class="time">10:09</div>
+              <div class="desc">Клиент #C-233 отменил поездку. <span class="pill warn">Отмена</span></div>
+            </div>
+            <div class="event">
+              <div class="time">10:03</div>
+              <div class="desc">Водитель #D-087 вышел оффлайн. <span class="pill err">Оффлайн</span></div>
+            </div>
+            <div class="event">
+              <div class="time">09:55</div>
+              <div class="desc">Новый клиент #C-604 в Юнусабад. <span class="pill ok">Новый</span></div>
+            </div>
+            <div class="event">
+              <div class="time">09:48</div>
+              <div class="desc">Перегрузка зоны центр: высокий спрос. <span class="pill warn">Спрос</span></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+            <!-- Lists: Drivers & Clients -->
+      <section class="lists" aria-label="Списки таксистов и клиентов">
+        <div class="list-card" aria-labelledby="drivers-list-title">
+          <h3 id="drivers-list-title">Таксисты</h3>
+          <div class="list">
+            <div class="row">
+              <div class="id">#D-100</div>
+              <div class="action">Ожидает заказ в Мирабад</div>
+              <div class="status online">Онлайн</div>
+            </div>
+            <div class="row">
+              <div class="id">#D-101</div>
+              <div class="action">В пути к клиенту #C-552</div>
+              <div class="status busy">На заказе</div>
+            </div>
+            <div class="row">
+              <div class="id">#D-102</div>
+              <div class="action">Завершает поездку (Юнусабад)</div>
+              <div class="status busy">Занят</div>
+            </div>
+            <div class="row">
+              <div class="id">#D-087</div>
+              <div class="action">Нет активности</div>
+              <div class="status offline">Оффлайн</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="list-card" aria-labelledby="clients-list-title">
+          <h3 id="clients-list-title">Клиенты</h3>
+          <div class="list">
+            <div class="row">
+              <div class="id">#C-552</div>
+              <div class="action">Поездка подтверждена (Чиланзар → Центр)</div>
+              <div class="status busy">В поездке</div>
+            </div>
+            <div class="row">
+              <div class="id">#C-233</div>
+              <div class="action">Отменил заказ 5 мин назад</div>
+              <div class="status offline">Отмена</div>
+            </div>
+            <div class="row">
+              <div class="id">#C-604</div>
+              <div class="action">Новый запрос в Юнусабад</div>
+              <div class="status online">Активный</div>
+            </div>
+            <div class="row">
+              <div class="id">#C-410</div>
+              <div class="action">Ожидает подтверждения водителя</div>
+              <div class="status online">Ожидание</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      // Инициализация карты Leaflet
+      const tashkent = [41.2995, 69.2401];
+      const map = L.map('map', { zoomControl: true }).setView(tashkent, 12);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      // Слои водителей и клиентов
+      const driversLayer = L.layerGroup().addTo(map);
+      const clientsLayer = L.layerGroup().addTo(map);
+
+      // Примеры точек (можно заменить реальными данными)
+      const driverPoints = [
+        [41.3111, 69.2797],
+        [41.3275, 69.2813],
+        [41.2910, 69.2036]
+      ];
+      const clientPoints = [
+        [41.3050, 69.2480],
+        [41.3155, 69.2572],
+        [41.2923, 69.2650]
+      ];
+
+      driverPoints.forEach((p, i) => {
+        L.circleMarker(p, {
+          radius: 7,
+          color: '#22d3ee',
+          fillColor: '#22d3ee',
+          fillOpacity: 0.85,
+          weight: 2
+        }).bindPopup(`Таксист #D-${100+i}`).addTo(driversLayer);
+      });
+
+      clientPoints.forEach((p, i) => {
+        L.circleMarker(p, {
+          radius: 6,
+          color: '#4f8cff',
+          fillColor: '#4f8cff',
+          fillOpacity: 0.85,
+          weight: 2
+        }).bindPopup(`Клиент #C-${500+i}`).addTo(clientsLayer);
+      });
+
+      // Контрол видимости слоёв
+      L.control.layers(null, {
+        'Таксисты': driversLayer,
+        'Клиенты': clientsLayer
+      }, { collapsed: false, position: 'topright' }).addTo(map);
+
+      // Масштаб к охвату всех маркеров
+      const all = driverPoints.concat(clientPoints);
+      if (all.length) {
+        const bounds = L.latLngBounds(all.map(([lat, lng]) => L.latLng(lat, lng)));
+        map.fitBounds(bounds.pad(0.2));
+      }
+    </script>
+
+  </body>
+</html>
